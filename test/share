@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cp * /home/yemel/Dropbox/madriguera/pod-bin/yemel
+dropbox stop
+dropbox start

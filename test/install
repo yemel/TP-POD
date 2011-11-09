@@ -1,0 +1,7 @@
+#!/bin/bash
+
+cd ../tpe
+mvn package
+cd ../test
+cp ../tpe/mySimulation/target/ClusterNode.one-jar.jar .
+cp ../tpe/mySimulation/file.policy .

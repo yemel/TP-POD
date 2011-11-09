@@ -1,0 +1,3 @@
+#!/bin/bash
+
+java -Djava.rmi.server.hostname=10.0.2.40 -Djava.security.policy=file.policy -jar ClusterNode.one-jar.jar $@
