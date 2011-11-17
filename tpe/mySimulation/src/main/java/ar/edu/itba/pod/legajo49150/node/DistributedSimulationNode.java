@@ -20,7 +20,5 @@ public class DistributedSimulationNode extends SimulationNode {
 		super(nodeInfo, maper);
 		sim = new DistributedSimulationNode(nodeInfo, maper);
 	}
-
-	
 	
 }

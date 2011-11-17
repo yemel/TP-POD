@@ -14,6 +14,7 @@ public class Connect extends Command<ClusterNode> {
 	@Override
 	protected void execute(List<String> args) {
 		try {
+			System.out.println("Antes de hacer connectToGroup");
 			node.connectToGroup(args.get(0), Integer.valueOf(args.get(1)));
 		} catch (Exception e) {
 			e.printStackTrace();

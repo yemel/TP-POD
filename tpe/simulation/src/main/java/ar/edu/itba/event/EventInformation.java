@@ -71,6 +71,12 @@ public class EventInformation implements Serializable {
 	}
 
 	@Override
+	public String toString() {
+		return "EventInformation [nodeId=" + nodeId + ", receivedTime="
+				+ receivedTime + "]";
+	}
+
+	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;

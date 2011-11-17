@@ -11,17 +11,33 @@ public class SimulationApp {
 
 	public static void main(String[] args) throws Exception {
 		if(args.length != 3){
-			System.out.println("Invalid arguments");
+			System.out.println("Invalid arguments: <Name> <Host> <Port>");
 			return;
 		}
 		
-		if(System.getSecurityManager() == null){
-			System.setSecurityManager(new SecurityManager());
-		}
+		securityInit();
+		setRmiServerHostname(args[1]);
 		
 		TimeMapper timeMapper = TimeMappers.oneSecondEach(Duration.standardHours(6));
 		SimulationNode node = SimulationNode.newNode(args[0], args[1], Integer.valueOf(args[2]),timeMapper);
 		new SimulationConsole<SimulationNode>(node).run();
+	}
+	
+	// TODO: Poner esto donde corresponda
+	private static void securityInit() {
+		if ( System.getProperty("java.security.policy") == null ) {
+			System.setProperty("java.security.policy", "file.policy");
+		}
+		
+		if (System.getSecurityManager() == null) {
+			System.setSecurityManager(new SecurityManager());
+		}
+	}
+	
+	private static void setRmiServerHostname(String host) {
+		if ( System.getProperty("java.rmi.server.hostname") == null ) {
+			System.setProperty("java.rmi.server.hostname", host);
+		}
 	}
 	
 }

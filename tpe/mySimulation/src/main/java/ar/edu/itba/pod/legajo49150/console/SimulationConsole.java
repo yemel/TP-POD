@@ -6,6 +6,7 @@ import java.util.Map;
 
 import ar.edu.itba.pod.agent.market.Resource;
 import ar.edu.itba.pod.agent.market.ResourceAgent;
+import ar.edu.itba.pod.legajo49150.console.cmd.other.Coordinator;
 import ar.edu.itba.pod.legajo49150.console.cmd.simulation.AddConsumer;
 import ar.edu.itba.pod.legajo49150.console.cmd.simulation.AddMarket;
 import ar.edu.itba.pod.legajo49150.console.cmd.simulation.AddProducer;
@@ -38,6 +39,7 @@ public class SimulationConsole<T extends SimulationNode> extends ClusterConsole<
 	@Override
 	protected void loadCommands(List<Command<?>> commands, T node, Map<String, Object> context) {
 		super.loadCommands(commands, node, context);
+		commands.add(new Coordinator(node, context));
 		commands.add(new ListResources(node, context));
 		commands.add(new ListAgents(node, context));
 		commands.add(new AddResource(node, context));

@@ -1,6 +1,5 @@
 package ar.edu.itba.pod.legajo49150.node;
 
-import java.rmi.AlreadyBoundException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
@@ -24,22 +23,15 @@ public class ClusterNode implements ClusterAdministration, Node {
 
 	private final NodeInformation nodeInfo;
 	private final Set<NodeInformation> nodes = Collections.synchronizedSet(new HashSet<NodeInformation>());
-	protected static NameResolver directory = new NameResolver();
 
 	private String groupID;
 	
 	// TODO: Colección sincronizada (?)
 	
-	public static ClusterNode newNode(String id, String host, int port) throws RemoteException, AlreadyBoundException {
-		ClusterNode node = new ClusterNode(new NodeInformation(host, port, id));
-		directory.publishAdmin(node, host, port);
-		return node;
-	}
-	
 	public ClusterNode(NodeInformation nodeInfo) throws RemoteException {
-		UnicastRemoteObject.exportObject(this, 0); // TODO: Esto es safe-publishing?
 		this.nodeInfo = nodeInfo;
 		nodes.add(nodeInfo);
+		UnicastRemoteObject.exportObject(this, 0); // TODO: Esto es safe-publishing?
 	}
 	
 	@Override
@@ -58,7 +50,7 @@ public class ClusterNode implements ClusterAdministration, Node {
 
 	@Override
 	public boolean isConnectedToGroup() throws RemoteException {
-		return (getGroupID() == null);
+		return (getGroupID() != null);
 	}
 	
 	@Override
@@ -110,7 +102,6 @@ public class ClusterNode implements ClusterAdministration, Node {
 		
 		return new HashSet<NodeInformation>(nodes);
 	}
-
 
 	private void disconnect(){
 		this.nodes.clear();
