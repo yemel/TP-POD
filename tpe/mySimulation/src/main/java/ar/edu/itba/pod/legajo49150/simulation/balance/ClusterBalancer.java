@@ -18,8 +18,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import javax.swing.LookAndFeel;
-
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 
@@ -28,7 +26,7 @@ import ar.edu.itba.balance.api.AgentsTransfer;
 import ar.edu.itba.balance.api.NodeAgent;
 import ar.edu.itba.balance.api.NotCoordinatorException;
 import ar.edu.itba.node.NodeInformation;
-import ar.edu.itba.pod.legajo49150.node.ClusterNode;
+import ar.edu.itba.pod.legajo49150.node.NodeService;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -36,7 +34,7 @@ import com.google.common.collect.Maps;
 public class ClusterBalancer implements AgentsBalancer {
 	private final Logger LOGGER = Logger.getLogger(ClusterBalancer.class);
 
-	private final ClusterNode clusterNode;
+	private final NodeService services;
 	private final Set<Election> elections = Collections.newSetFromMap(new ConcurrentHashMap<Election, Boolean>());
 	private final BlockingQueue<Election> toProcess = new LinkedBlockingQueue<Election>();
 
@@ -50,8 +48,8 @@ public class ClusterBalancer implements AgentsBalancer {
 	Lock lock = new ReentrantLock();
 	Condition isDone = lock.newCondition();
 
-	public ClusterBalancer(ClusterNode clusterNode) throws RemoteException{
-		this.clusterNode = clusterNode;
+	public ClusterBalancer(NodeService services) throws RemoteException{
+		this.services = services;
 		UnicastRemoteObject.exportObject(this, 0);
 	}
 
@@ -97,9 +95,9 @@ public class ClusterBalancer implements AgentsBalancer {
 		int remainingNodes = 0;
 
 		// Map: <NodosVivimos,CantAgent>, Lista: Agentes a mover, Nodos totales
-		for(NodeInformation node: clusterNode.connectedNodes()){
+		for(NodeInformation node: services.getAdministrator().connectedNodes()){
 			if(!node.equals(agents.get(0).node())){
-				AgentsTransfer transfer = clusterNode.getDirectory().getTransfer(node);
+				AgentsTransfer transfer = services.getDirectory().getTransfer(node);
 				int nagents = transfer.getNumberOfAgents();
 				cluster.put(node, nagents);
 				totalAgents += nagents;
@@ -112,7 +110,7 @@ public class ClusterBalancer implements AgentsBalancer {
 		for(Entry<NodeInformation, Integer> each: cluster.entrySet()){
 			int toTransfer = Math.min(maxAgent - each.getValue(), agents.size());
 			if(toTransfer > 0){
-				AgentsTransfer transfer = clusterNode.getDirectory().getTransfer(each.getKey());
+				AgentsTransfer transfer = services.getDirectory().getTransfer(each.getKey());
 				transfer.runAgentsOnNode(agents.subList(0, toTransfer));
 			}
 		}
@@ -124,13 +122,14 @@ public class ClusterBalancer implements AgentsBalancer {
 		if(!isCoordinator()){
 			throw new NotCoordinatorException(currentCoordinator.get());
 		}
+		Set<NodeInformation> connectedNodes = services.getAdministrator().connectedNodes();
 		Map<NodeInformation,Integer> cluster = Maps.newHashMap();
 		int totalAgents = 1;
-		int remainingNodes = clusterNode.connectedNodes().size();
+		int remainingNodes = connectedNodes.size();
 
 		// Map: <NodosVivimos,CantAgent>, Lista: Agentes a mover, Nodos totales
-		for(NodeInformation node: clusterNode.connectedNodes()){
-			AgentsTransfer transfer = clusterNode.getDirectory().getTransfer(node);
+		for(NodeInformation node: connectedNodes){
+			AgentsTransfer transfer = services.getDirectory().getTransfer(node);
 			int nagents = transfer.getNumberOfAgents();
 			cluster.put(node, nagents);
 			totalAgents += nagents;
@@ -140,7 +139,7 @@ public class ClusterBalancer implements AgentsBalancer {
 		for(Entry<NodeInformation, Integer> each: cluster.entrySet()){
 			int toTransfer = maxAgent - each.getValue();
 			if(toTransfer > 0){
-				AgentsTransfer transfer = clusterNode.getDirectory().getTransfer(each.getKey());
+				AgentsTransfer transfer = services.getDirectory().getTransfer(each.getKey());
 				List<NodeAgent> a = Lists.newArrayList();
 				a.add(agent);
 				transfer.runAgentsOnNode(a);
@@ -150,13 +149,13 @@ public class ClusterBalancer implements AgentsBalancer {
 	}
 
 	private boolean isCoordinator(){
-		return clusterNode.getNodeInfo().equals(currentCoordinator.get());
+		return services.getAdministrator().getNodeInfo().equals(currentCoordinator.get());
 	}
 
 	public NodeInformation getCoordinator() throws RemoteException {
 		LOGGER.debug("GetCoordinator");
 		if(currentCoordinator.get() == null){
-			bullyElection(clusterNode.getNodeInfo(), DateTime.now().getMillis());
+			bullyElection(services.getAdministrator().getNodeInfo(), DateTime.now().getMillis());
 		}
 		try {
 			LOGGER.debug("Waiting at the lock");
@@ -180,7 +179,7 @@ public class ClusterBalancer implements AgentsBalancer {
 
 		@Override
 		public void run() {
-			NodeInformation self = clusterNode.getNodeInfo();
+			NodeInformation self = services.getAdministrator().getNodeInfo();
 			while(!threadStop.get()){
 				try {
 					LOGGER.debug("Esperando para procesar");
@@ -211,24 +210,24 @@ public class ClusterBalancer implements AgentsBalancer {
 			}
 
 			if(self.id().compareTo(e.getNode().id()) > 0){
-				clusterNode.getDirectory().getBalancer(e.getNode()).bullyOk(self);
+				services.getDirectory().getBalancer(e.getNode()).bullyOk(self);
 				bullyElection(self, new DateTime().getMillis());
 				return; // No broadcasteamos el evento porque soy más grande!
 			}
 
 			// Broadcast de la election para mayores y la mia
-			Set<NodeInformation> nodes = clusterNode.connectedNodes();
+			Set<NodeInformation> nodes = services.getAdministrator().connectedNodes();
 			for(NodeInformation each: nodes){
 				LOGGER.debug("Broadcast");
-				AgentsBalancer balancer = clusterNode.getDirectory().getBalancer(each);
+				AgentsBalancer balancer = services.getDirectory().getBalancer(each);
 				balancer.bullyElection(e.getNode(), e.getTimestamp());
 			}
 		}
 
 		private void processCoordinator(Election e) throws RemoteException{
 			currentCoordinator.set(e.getNode());
-			for(NodeInformation each: clusterNode.connectedNodes()){
-				AgentsBalancer balancer = clusterNode.getDirectory().getBalancer(each);
+			for(NodeInformation each: services.getAdministrator().connectedNodes()){
+				AgentsBalancer balancer = services.getDirectory().getBalancer(each);
 				balancer.bullyCoordinator(e.getNode(), e.getTimestamp());
 			}
 			

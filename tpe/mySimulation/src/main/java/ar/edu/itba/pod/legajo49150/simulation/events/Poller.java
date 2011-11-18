@@ -10,6 +10,8 @@ import ar.edu.itba.event.EventInformation;
 import ar.edu.itba.event.RemoteEventDispatcher;
 import ar.edu.itba.node.NodeInformation;
 import ar.edu.itba.pod.legajo49150.node.ClusterNode;
+import ar.edu.itba.pod.legajo49150.node.Directory;
+import ar.edu.itba.pod.legajo49150.node.NodeService;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
@@ -20,11 +22,13 @@ public class Poller implements Runnable {
 	private static Duration POLLING_TIME = Duration.millis(600);
 	private static double POLLING_PROBABILITY = 0.1;
 
-	private ClusterNode clusterNode;
-	private RemoteEventDispatcher remoteDispatcher;
+	private final ClusterNode clusterNode;
+	private final Directory directory;
+	private final RemoteEventDispatcher remoteDispatcher;
 	
-	public Poller(ClusterNode clusterNode, RemoteEventDispatcher remoteDispatcher){
-		this.clusterNode = clusterNode;
+	public Poller(NodeService services, RemoteEventDispatcher remoteDispatcher){
+		this.clusterNode = services.getAdministrator();
+		this.directory = services.getDirectory();
 		this.remoteDispatcher = remoteDispatcher;
 	}
 	
@@ -35,7 +39,7 @@ public class Poller implements Runnable {
 			Thread.sleep(POLLING_TIME.getMillis());
 			Iterable<NodeInformation> nodes = Iterables.filter(clusterNode.connectedNodes(), randomPublish(POLLING_PROBABILITY, clusterNode.getNodeInfo()));
 			for(NodeInformation node: nodes){
-				RemoteEventDispatcher dispatcher = clusterNode.getDirectory().getDispatcher(node);
+				RemoteEventDispatcher dispatcher = directory.getDispatcher(node);
 				Set<EventInformation> events = dispatcher.newEventsFor(clusterNode.getNodeInfo());
 				for(EventInformation event: events){
 //					LOGGER.info("Polled event from " + node.id());

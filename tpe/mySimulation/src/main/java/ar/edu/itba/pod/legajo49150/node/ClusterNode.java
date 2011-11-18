@@ -10,7 +10,6 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
-import ar.edu.itba.node.Node;
 import ar.edu.itba.node.NodeInformation;
 import ar.edu.itba.node.api.ClusterAdministration;
 import ar.edu.itba.pod.doc.ThreadSafe;
@@ -18,20 +17,22 @@ import ar.edu.itba.pod.doc.ThreadSafe;
 import com.google.common.base.Preconditions;
 
 @ThreadSafe
-public class ClusterNode implements ClusterAdministration, Node {
+public class ClusterNode implements ClusterAdministration {
 	private final Logger LOGGER = Logger.getLogger(ClusterNode.class);
 
 	private final NodeInformation nodeInfo;
+	private final Directory directory;
 	private final Set<NodeInformation> nodes = Collections.synchronizedSet(new HashSet<NodeInformation>());
 
 	private String groupID;
 	
 	// TODO: Colección sincronizada (?)
 	
-	public ClusterNode(NodeInformation nodeInfo) throws RemoteException {
+	public ClusterNode(NodeInformation nodeInfo, NodeService service) throws RemoteException {
 		this.nodeInfo = nodeInfo;
+		this.directory = service.getDirectory();
 		nodes.add(nodeInfo);
-		UnicastRemoteObject.exportObject(this, 0); // TODO: Esto es safe-publishing?
+		UnicastRemoteObject.exportObject(this, 0);
 	}
 	
 	@Override

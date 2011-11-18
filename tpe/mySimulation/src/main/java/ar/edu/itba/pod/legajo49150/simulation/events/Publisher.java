@@ -10,6 +10,8 @@ import ar.edu.itba.event.EventInformation;
 import ar.edu.itba.event.RemoteEventDispatcher;
 import ar.edu.itba.node.NodeInformation;
 import ar.edu.itba.pod.legajo49150.node.ClusterNode;
+import ar.edu.itba.pod.legajo49150.node.Directory;
+import ar.edu.itba.pod.legajo49150.node.NodeService;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
@@ -21,10 +23,12 @@ public class Publisher implements Runnable {
 	private static double PUBLISH_PROBABILITY = 0.2;
 
 	private ClusterNode clusterNode;
+	private Directory directory;
 	private RemoteEventDispatcher remoteDispatcher;
 
-	public Publisher(ClusterNode clusterNode, RemoteEventDispatcher remoteDispatcher){
-		this.clusterNode = clusterNode;
+	public Publisher(NodeService services, RemoteEventDispatcher remoteDispatcher){
+		this.clusterNode = services.getAdministrator();
+		this.directory = services.getDirectory();
 		this.remoteDispatcher = remoteDispatcher;
 	}
 
@@ -36,7 +40,7 @@ public class Publisher implements Runnable {
 				Iterable<NodeInformation> nodes = Iterables.filter(clusterNode.connectedNodes(), randomPublish(PUBLISH_PROBABILITY, clusterNode.getNodeInfo()));
 				for(NodeInformation node: nodes){
 					Set<EventInformation> events = remoteDispatcher.newEventsFor(node);
-					RemoteEventDispatcher dispatcher = clusterNode.getDirectory().getDispatcher(node);
+					RemoteEventDispatcher dispatcher = directory.getDispatcher(node);
 					for(EventInformation event: events){
 						dispatcher.publish(event);
 					}

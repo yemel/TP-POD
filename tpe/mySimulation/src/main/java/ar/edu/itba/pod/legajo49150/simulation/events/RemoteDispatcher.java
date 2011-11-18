@@ -16,6 +16,7 @@ import ar.edu.itba.event.EventInformation;
 import ar.edu.itba.event.RemoteEventDispatcher;
 import ar.edu.itba.node.NodeInformation;
 import ar.edu.itba.pod.agent.runner.Agent;
+import ar.edu.itba.pod.doc.ThreadSafe;
 import ar.edu.itba.pod.legajo49150.node.NodeService;
 import ar.edu.itba.pod.legajo49150.simulation.LocalDispatcher;
 import ar.edu.itba.pod.legajo49150.simulation.TimedEventInformation;
@@ -25,20 +26,21 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
+@ThreadSafe
 public class RemoteDispatcher implements RemoteEventDispatcher {
 
-	private Logger LOGGER = Logger.getLogger(RemoteDispatcher.class);
+	private final Logger LOGGER = Logger.getLogger(RemoteDispatcher.class);
 
-	private LocalDispatcher localDispatcher;
+	private final LocalDispatcher localDispatcher;
 
-	private Queue<TimedEventInformation> messages = new ConcurrentLinkedQueue<TimedEventInformation>(); 
-	private Map<NodeInformation, DateTime> calendar = new ConcurrentHashMap<NodeInformation, DateTime>();
-	private Thread publisher, poller;
+	private final Queue<TimedEventInformation> messages = new ConcurrentLinkedQueue<TimedEventInformation>(); 
+	private final Map<NodeInformation, DateTime> calendar = new ConcurrentHashMap<NodeInformation, DateTime>();
+	private final Thread publisher, poller;
 
 	public RemoteDispatcher(LocalDispatcher dispatcher, NodeService services) throws RemoteException{
 		this.localDispatcher = dispatcher;
-		this.publisher = new Thread(new Publisher(services.getAdministrator(), this));
-		this.poller = new Thread(new Poller(services.getAdministrator(), this));
+		this.publisher = new Thread(new Publisher(services, this));
+		this.poller = new Thread(new Poller(services, this));
 		// TODO: Implementar el Cleaner que limpie los mensajes!
 		UnicastRemoteObject.exportObject(this, 0);
 	}
