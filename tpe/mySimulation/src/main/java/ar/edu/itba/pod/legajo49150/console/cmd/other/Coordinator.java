@@ -4,12 +4,12 @@ import java.rmi.RemoteException;
 import java.util.List;
 import java.util.Map;
 
-import ar.edu.itba.pod.legajo49150.console.SimulationCommand;
-import ar.edu.itba.pod.legajo49150.node.SimulationNode;
+import ar.edu.itba.pod.legajo49150.console.ContextCommand;
+import ar.edu.itba.pod.legajo49150.node.NodeService;
 
-public class Coordinator extends SimulationCommand<SimulationNode> {
+public class Coordinator extends ContextCommand<NodeService> {
 	
-	public Coordinator(SimulationNode node, Map<String, Object> context) {
+	public Coordinator(NodeService node, Map<String, Object> context) {
 		super(node, context);
 	}
 
@@ -21,8 +21,7 @@ public class Coordinator extends SimulationCommand<SimulationNode> {
 		}
 		
 		try {
-			System.out.println(node.getBalancer());
-			System.out.println(node.getBalancer().getCoordinator());
+			System.out.println("The coordinator is: " + nodeService.getBalancer().getCoordinator());
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}

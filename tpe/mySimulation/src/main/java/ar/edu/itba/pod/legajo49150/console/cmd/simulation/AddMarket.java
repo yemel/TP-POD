@@ -4,12 +4,12 @@ import java.util.List;
 import java.util.Map;
 
 import ar.edu.itba.pod.agent.market.Market;
-import ar.edu.itba.pod.legajo49150.console.SimulationCommand;
-import ar.edu.itba.pod.legajo49150.node.SimulationNode;
+import ar.edu.itba.pod.legajo49150.console.ContextCommand;
+import ar.edu.itba.pod.legajo49150.node.NodeService;
 
-public class AddMarket extends SimulationCommand<SimulationNode> {
+public class AddMarket extends ContextCommand<NodeService> {
 
-	public AddMarket(SimulationNode node, Map<String, Object> context) {
+	public AddMarket(NodeService node, Map<String, Object> context) {
 		super(node, context);
 	}
 
@@ -22,8 +22,7 @@ public class AddMarket extends SimulationCommand<SimulationNode> {
 		
 		String name = args.get(0);
 		Market m = new Market(name, resources().get(args.get(1)));
-		node.add(m);
-		agents().put(name, m);
+		nodeService.getBalancer().addAgentToCluster(m);
 	}
 
 	@Override

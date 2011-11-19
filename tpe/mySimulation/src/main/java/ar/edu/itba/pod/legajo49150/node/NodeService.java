@@ -17,7 +17,7 @@ import ar.edu.itba.pod.time.TimeMapper;
 @ThreadSafe
 public class NodeService {
 
-	private final AtomicReference<ClusterNode> admintrator = new AtomicReference<ClusterNode>();
+	private final AtomicReference<ClusterNode> administrator = new AtomicReference<ClusterNode>();
 	private final AtomicReference<RemoteDispatcher> dispatcher = new AtomicReference<RemoteDispatcher>();
 	private final AtomicReference<ClusterBalancer> balancer = new AtomicReference<ClusterBalancer>();
 	private final AtomicReference<ClusterTransfer> transfer = new AtomicReference<ClusterTransfer>();
@@ -30,8 +30,8 @@ public class NodeService {
 	}
 	
 	public void loadServices(NodeInformation nodeInfo, TimeMapper maper) throws RemoteException, AlreadyBoundException{
-		this.admintrator.set(new ClusterNode(nodeInfo, this));
-		directory.get().publishAdmin(admintrator.get(), nodeInfo.host(), nodeInfo.port());
+		this.administrator.set(new ClusterNode(nodeInfo, this));
+		directory.get().publishAdmin(administrator.get(), nodeInfo.host(), nodeInfo.port());
 		
 		LocalDispatcher localDispatcher = new LocalDispatcher(this);
 		this.dispatcher.set(new RemoteDispatcher(localDispatcher, this));
@@ -40,8 +40,8 @@ public class NodeService {
 		this.simulation.set(new DistributedSimulation(maper, localDispatcher));
 		
 		this.balancer.set(new ClusterBalancer(this));
-		this.balancer.get().start();
 		directory.get().publishBalancer(balancer.get(), nodeInfo.host(), nodeInfo.port());
+		this.balancer.get().start();
 		
 		this.transfer.set(new ClusterTransfer(this));
 		directory.get().publishTransfer(transfer.get(), nodeInfo.host(), nodeInfo.port());
@@ -51,9 +51,9 @@ public class NodeService {
 	}
 
 	public ClusterNode getAdministrator() {
-		if(admintrator == null)
+		if(administrator == null)
 			throw new IllegalStateException("The object is not ready yet");
-		return admintrator.get();
+		return administrator.get();
 	}
 
 	public RemoteDispatcher getDispatcher() {

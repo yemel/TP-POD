@@ -3,12 +3,12 @@ package ar.edu.itba.pod.legajo49150.console.cmd.simulation;
 import java.util.List;
 import java.util.Map;
 
-import ar.edu.itba.pod.legajo49150.console.SimulationCommand;
-import ar.edu.itba.pod.legajo49150.node.SimulationNode;
+import ar.edu.itba.pod.legajo49150.console.ContextCommand;
+import ar.edu.itba.pod.legajo49150.node.NodeService;
 
-public class Remaining extends SimulationCommand<SimulationNode> {
+public class Remaining extends ContextCommand<NodeService> {
 
-	public Remaining(SimulationNode node, Map<String, Object> context) {
+	public Remaining(NodeService node, Map<String, Object> context) {
 		super(node, context);
 	}
 
@@ -19,7 +19,7 @@ public class Remaining extends SimulationCommand<SimulationNode> {
 			return;
 		}
 		
-		node.remaining();
+		nodeService.getSimulation().remaining();
 	}
 
 	@Override

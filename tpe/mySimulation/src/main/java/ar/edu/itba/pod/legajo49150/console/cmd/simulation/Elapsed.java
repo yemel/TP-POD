@@ -3,12 +3,12 @@ package ar.edu.itba.pod.legajo49150.console.cmd.simulation;
 import java.util.List;
 import java.util.Map;
 
-import ar.edu.itba.pod.legajo49150.console.SimulationCommand;
-import ar.edu.itba.pod.legajo49150.node.SimulationNode;
+import ar.edu.itba.pod.legajo49150.console.ContextCommand;
+import ar.edu.itba.pod.legajo49150.node.NodeService;
 
-public class Elapsed extends SimulationCommand<SimulationNode> {
+public class Elapsed extends ContextCommand<NodeService> {
 
-	public Elapsed(SimulationNode node, Map<String, Object> context) {
+	public Elapsed(NodeService node, Map<String, Object> context) {
 		super(node, context);
 	}
 
@@ -19,7 +19,7 @@ public class Elapsed extends SimulationCommand<SimulationNode> {
 			return;
 		}
 		
-		node.elapsed();
+		nodeService.getSimulation().elapsed();
 	}
 
 	@Override

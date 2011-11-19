@@ -6,12 +6,12 @@ import java.util.Map;
 import org.joda.time.Duration;
 
 import ar.edu.itba.pod.agent.market.Consumer;
-import ar.edu.itba.pod.legajo49150.console.SimulationCommand;
-import ar.edu.itba.pod.legajo49150.node.SimulationNode;
+import ar.edu.itba.pod.legajo49150.console.ContextCommand;
+import ar.edu.itba.pod.legajo49150.node.NodeService;
 
-public class AddConsumer extends SimulationCommand<SimulationNode> {
+public class AddConsumer extends ContextCommand<NodeService> {
 
-	public AddConsumer(SimulationNode node, Map<String, Object> context) {
+	public AddConsumer(NodeService node, Map<String, Object> context) {
 		super(node, context);
 	}
 
@@ -21,12 +21,11 @@ public class AddConsumer extends SimulationCommand<SimulationNode> {
 			System.out.println("Invalid arguments");
 			return;
 		}
-		
+
 		Duration d = Duration.standardHours(Integer.valueOf(args.get(2)));
 		String name = args.get(0);
 		Consumer c = new Consumer(name, resources().get(args.get(1)), d, 1);
-		node.add(c);
-		agents().put(name, c);
+		nodeService.getBalancer().addAgentToCluster(c);
 	}
 
 	@Override

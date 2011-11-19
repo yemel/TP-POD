@@ -1,5 +1,7 @@
 package ar.edu.itba.pod.legajo49150.simulation.events;
 
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.util.Random;
 import java.util.Set;
 
@@ -39,12 +41,7 @@ public class Poller implements Runnable {
 			Thread.sleep(POLLING_TIME.getMillis());
 			Iterable<NodeInformation> nodes = Iterables.filter(clusterNode.connectedNodes(), randomPublish(POLLING_PROBABILITY, clusterNode.getNodeInfo()));
 			for(NodeInformation node: nodes){
-				RemoteEventDispatcher dispatcher = directory.getDispatcher(node);
-				Set<EventInformation> events = dispatcher.newEventsFor(clusterNode.getNodeInfo());
-				for(EventInformation event: events){
-//					LOGGER.info("Polled event from " + node.id());
-					remoteDispatcher.publish(event);
-				}
+				pollEventsFor(node);
 			}
 			} catch (InterruptedException e) {
 				LOGGER.info("Poller SHUTDOWN");
@@ -52,6 +49,14 @@ public class Poller implements Runnable {
 			} catch (Exception e) {
 				LOGGER.error("Poller can't reach a node: " + e.getMessage());
 			}
+		}
+	}
+
+	public void pollEventsFor(NodeInformation node) throws RemoteException, NotBoundException, InterruptedException{
+		RemoteEventDispatcher dispatcher = directory.getDispatcher(node);
+		Set<EventInformation> events = dispatcher.newEventsFor(clusterNode.getNodeInfo());
+		for(EventInformation event: events){
+			remoteDispatcher.publish(event);
 		}
 	}
 	
@@ -65,4 +70,5 @@ public class Poller implements Runnable {
 			}
 		};
 	}
+	
 }

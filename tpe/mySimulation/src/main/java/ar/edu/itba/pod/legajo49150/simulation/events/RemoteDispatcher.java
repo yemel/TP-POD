@@ -1,5 +1,6 @@
 package ar.edu.itba.pod.legajo49150.simulation.events;
 
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Map;
@@ -35,12 +36,16 @@ public class RemoteDispatcher implements RemoteEventDispatcher {
 
 	private final Queue<TimedEventInformation> messages = new ConcurrentLinkedQueue<TimedEventInformation>(); 
 	private final Map<NodeInformation, DateTime> calendar = new ConcurrentHashMap<NodeInformation, DateTime>();
-	private final Thread publisher, poller;
+	private final Thread publisherT, pollerT;
+	private final Publisher publisher;
+	private final Poller poller;
 
 	public RemoteDispatcher(LocalDispatcher dispatcher, NodeService services) throws RemoteException{
 		this.localDispatcher = dispatcher;
-		this.publisher = new Thread(new Publisher(services, this));
-		this.poller = new Thread(new Poller(services, this));
+		this.publisher = new Publisher(services, this);
+		this.publisherT = new Thread(this.publisher);
+		this.poller = new Poller(services, this);
+		this.pollerT = new Thread(this.poller);
 		// TODO: Implementar el Cleaner que limpie los mensajes!
 		UnicastRemoteObject.exportObject(this, 0);
 	}
@@ -48,10 +53,7 @@ public class RemoteDispatcher implements RemoteEventDispatcher {
 	@Override
 	public BlockingQueue<Object> moveQueueFor(Agent agent)
 			throws RemoteException {
-		// Sincronizar eventos entre ambos, pull, push.
-		// Sacar la cola de eventos
 		BlockingQueue<Object> queue = localDispatcher.deregister(agent);
-		// Retornar la cola de eventos
 		return queue;
 	}
 
@@ -68,12 +70,11 @@ public class RemoteDispatcher implements RemoteEventDispatcher {
 	}
 
 	@Override
-	public void publish(EventInformation event) throws RemoteException,
+	public synchronized void publish(EventInformation event) throws RemoteException,
 	InterruptedException {
 		TimedEventInformation ev = new TimedEventInformation(event, new DateTime());
 		if(!messages.contains(ev)){
 			messages.add(ev);
-//			LOGGER.info("Reciving event " + event);
 			localDispatcher.localPublish(event.source(), event.event());
 		}
 		
@@ -99,20 +100,33 @@ public class RemoteDispatcher implements RemoteEventDispatcher {
 		}
 	};
 
-	public void start(){
-		publisher.start();
-		poller.start();
+	public synchronized void start(){
+		publisherT.start();
+		pollerT.start();
 	}
 
-	public void stop(){
+	public synchronized void stop(){
 		try {
-			publisher.interrupt();
-			poller.interrupt();
-			publisher.join();
-			poller.join();
+			publisherT.interrupt();
+			pollerT.interrupt();
+			publisherT.join();
+			pollerT.join();
 		} catch (InterruptedException e) {
 			LOGGER.error("Can't join with a worker thread: " + e.getMessage());
 		}
 	}
 
+	public synchronized void synchronizeWith(NodeInformation node){
+		try {
+			this.poller.pollEventsFor(node);
+			this.publisher.pushEventsFor(node);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		} catch (NotBoundException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+	
 }

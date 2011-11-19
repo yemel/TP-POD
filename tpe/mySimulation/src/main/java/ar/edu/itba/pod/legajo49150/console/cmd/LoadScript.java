@@ -7,12 +7,12 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.List;
 
-import ar.edu.itba.node.Node;
 import ar.edu.itba.pod.legajo49150.console.Command;
+import ar.edu.itba.pod.legajo49150.node.NodeService;
 
-public class LoadScript<T extends Node> extends Command<T> {
+public class LoadScript extends Command<NodeService> {
 
-	public LoadScript(T node2) {
+	public LoadScript(NodeService node2) {
 		super(node2);
 	}
 
@@ -20,7 +20,8 @@ public class LoadScript<T extends Node> extends Command<T> {
 	protected void execute(List<String> args) {}
 
 	@Override
-	public void doChain(List<String> call, List<Command<?>> chain) {
+	public boolean doChain(List<String> call, List<Command<NodeService>> chain) {
+		boolean valid = false;
 		if(call.get(0).equals(getName())){
 			try {
 			List<String> args = call.subList(1, call.size());
@@ -31,6 +32,7 @@ public class LoadScript<T extends Node> extends Command<T> {
 				args = Arrays.asList(line.split(" "));
 				super.doChain(args, chain);
 			}
+			valid = true;
 			} catch (IOException e){
 				System.out.println("Problems reading de file");
 			}
@@ -41,7 +43,9 @@ public class LoadScript<T extends Node> extends Command<T> {
 		}
 		
 		if(chain.size() > 0)
-			chain.get(0).doChain(call, chain.subList(1, chain.size()));
+			valid |= chain.get(0).doChain(call, chain.subList(1, chain.size()));
+		return valid;
+		
 	}
 
 	@Override

@@ -3,12 +3,12 @@ package ar.edu.itba.pod.legajo49150.console.cmd.simulation;
 import java.util.List;
 import java.util.Map;
 
-import ar.edu.itba.pod.legajo49150.console.SimulationCommand;
-import ar.edu.itba.pod.legajo49150.node.SimulationNode;
+import ar.edu.itba.pod.legajo49150.console.ContextCommand;
+import ar.edu.itba.pod.legajo49150.node.NodeService;
 
-public class Stop extends SimulationCommand<SimulationNode> {
+public class Stop extends ContextCommand<NodeService> {
 
-	public Stop(SimulationNode node, Map<String, Object> context) {
+	public Stop(NodeService node, Map<String, Object> context) {
 		super(node, context);
 	}
 
@@ -20,7 +20,8 @@ public class Stop extends SimulationCommand<SimulationNode> {
 		}
 		
 		try {
-			node.stop();
+			nodeService.getSimulation().stop();
+			nodeService.getDispatcher().stop();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

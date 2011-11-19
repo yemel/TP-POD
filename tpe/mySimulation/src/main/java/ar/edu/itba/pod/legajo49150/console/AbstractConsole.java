@@ -10,28 +10,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import ar.edu.itba.node.Node;
 import ar.edu.itba.pod.legajo49150.console.cmd.LoadScript;
+import ar.edu.itba.pod.legajo49150.node.NodeService;
 
-public abstract class AbstractConsole<T extends Node> implements Runnable{
+public abstract class AbstractConsole implements Runnable{
 
-	private BufferedReader input;
-	private AtomicBoolean finish = new AtomicBoolean(false);
-	private List<Command<?>> commands = new ArrayList<Command<?>>();
-	protected Map<String, Object> context = new HashMap<String, Object>();
+	private final BufferedReader input;
+	private final AtomicBoolean finish = new AtomicBoolean(false);
+	private final List<Command<NodeService>> commands = new ArrayList<Command<NodeService>>();
+	protected final Map<String, Object> context = new HashMap<String, Object>();
+	protected final NodeService nodeService;
 	
-	public AbstractConsole(InputStream input, T object){
+	public AbstractConsole(InputStream input, NodeService nodeService){
 		this.input = new BufferedReader(new InputStreamReader(input));
+		this.nodeService = nodeService;
 		loadContext(context);
-		commands.add(new LoadScript<T>(null));
-		loadCommands(commands, object, context);
+		commands.add(new LoadScript(nodeService));
+		loadCommands(commands, nodeService, context);
 	}
 
 	protected abstract void loadContext(Map<String, Object> context);
-	protected abstract void loadCommands(List<Command<?>> commands, T object, Map<String, Object> context);
+	protected abstract void loadCommands(List<Command<NodeService>> commands, NodeService nodeService, Map<String, Object> context);
 	
 	@Override
 	public void run() {
+		boolean valid;
 		String line;
 		List<String> args;
 		try {
@@ -39,7 +42,10 @@ public abstract class AbstractConsole<T extends Node> implements Runnable{
 				System.out.print(">> ");
 				line = input.readLine();
 				args = Arrays.asList(line.split(" "));
-				commands.get(0).doChain(args, commands.subList(1, commands.size()));
+				valid = commands.get(0).doChain(args, commands.subList(1, commands.size()));
+				if(!valid){
+					System.out.println("Invalid command");
+				}
 			}
 		} catch(Exception e){
 			e.printStackTrace();

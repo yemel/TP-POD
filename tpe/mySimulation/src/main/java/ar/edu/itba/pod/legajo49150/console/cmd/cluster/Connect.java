@@ -3,19 +3,19 @@ package ar.edu.itba.pod.legajo49150.console.cmd.cluster;
 import java.util.List;
 
 import ar.edu.itba.pod.legajo49150.console.Command;
-import ar.edu.itba.pod.legajo49150.node.ClusterNode;
+import ar.edu.itba.pod.legajo49150.node.NodeService;
 
-public class Connect extends Command<ClusterNode> {
+public class Connect extends Command<NodeService> {
 
-	public Connect(ClusterNode node) {
+	public Connect(NodeService node) {
 		super(node);
 	}
 
 	@Override
 	protected void execute(List<String> args) {
 		try {
-			System.out.println("Antes de hacer connectToGroup");
-			node.connectToGroup(args.get(0), Integer.valueOf(args.get(1)));
+			nodeService.getAdministrator().connectToGroup(args.get(0), Integer.valueOf(args.get(1)));
+			nodeService.getBalancer().getCoordinator();
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("Error: " + e.getMessage());

@@ -25,7 +25,7 @@ public class SimulationApp {
 		NodeService node = new NodeService();
 		node.loadServices(nodeInfo, timeMapper);
 		
-//		new SimulationConsole<SimulationNode>(node).run();
+		new SimulationConsole(node).run();
 	}
 	
 	// TODO: Poner esto donde corresponda

@@ -5,18 +5,18 @@ import java.util.Set;
 
 import ar.edu.itba.node.NodeInformation;
 import ar.edu.itba.pod.legajo49150.console.Command;
-import ar.edu.itba.pod.legajo49150.node.ClusterNode;
+import ar.edu.itba.pod.legajo49150.node.NodeService;
 
-public class ConnectedNodes extends Command<ClusterNode> {
+public class ConnectedNodes extends Command<NodeService> {
 
-	public ConnectedNodes(ClusterNode node){
+	public ConnectedNodes(NodeService node){
 		super(node);
 	}
 	
 	@Override
 	protected void execute(List<String> args) {
 		try {
-			Set<NodeInformation> nodes = node.connectedNodes();
+			Set<NodeInformation> nodes = nodeService.getAdministrator().connectedNodes();
 			System.out.print("Nodes: [ ");
 			for(NodeInformation each: nodes){
 				System.out.print(each + " ");

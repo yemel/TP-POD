@@ -4,12 +4,12 @@ import java.util.List;
 import java.util.Map;
 
 import ar.edu.itba.pod.agent.market.Resource;
-import ar.edu.itba.pod.legajo49150.console.SimulationCommand;
-import ar.edu.itba.pod.legajo49150.node.SimulationNode;
+import ar.edu.itba.pod.legajo49150.console.ContextCommand;
+import ar.edu.itba.pod.legajo49150.node.NodeService;
 
-public class AddResource extends SimulationCommand<SimulationNode> {
+public class AddResource extends ContextCommand<NodeService> {
 
-	public AddResource(SimulationNode node, Map<String, Object> context) {
+	public AddResource(NodeService node, Map<String, Object> context) {
 		super(node, context);
 	}
 

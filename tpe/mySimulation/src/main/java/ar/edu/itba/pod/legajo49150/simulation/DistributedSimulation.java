@@ -11,6 +11,7 @@ import org.joda.time.Duration;
 
 import ar.edu.itba.pod.agent.runner.Agent;
 import ar.edu.itba.pod.agent.runner.Simulation;
+import ar.edu.itba.pod.doc.ThreadSafe;
 import ar.edu.itba.pod.multithread.AgentThread;
 import ar.edu.itba.pod.multithread.EventDispatcher;
 import ar.edu.itba.pod.time.TimeMapper;
@@ -18,14 +19,15 @@ import ar.edu.itba.pod.time.TimeMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
+@ThreadSafe
 public class DistributedSimulation implements Simulation {
 
 	private final EventDispatcher dispatcher;
 	private final TimeMapper timeMapper;
 
 	private Thread timeOutThread;
-	private List<AgentThread> agents = Lists.newArrayList();
-	private AtomicBoolean running = new AtomicBoolean();
+	private final List<AgentThread> agents = Lists.newArrayList();
+	private final AtomicBoolean running = new AtomicBoolean();
 
 	// expected start and end date of the simulation.
 	private DateTime start;

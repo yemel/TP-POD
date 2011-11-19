@@ -4,12 +4,12 @@ import java.util.List;
 import java.util.Map;
 
 import ar.edu.itba.pod.agent.runner.Agent;
-import ar.edu.itba.pod.legajo49150.console.SimulationCommand;
-import ar.edu.itba.pod.legajo49150.node.SimulationNode;
+import ar.edu.itba.pod.legajo49150.console.ContextCommand;
+import ar.edu.itba.pod.legajo49150.node.NodeService;
 
-public class Remove extends SimulationCommand<SimulationNode> {
+public class Remove extends ContextCommand<NodeService> {
 
-	public Remove(SimulationNode node, Map<String, Object> context) {
+	public Remove(NodeService node, Map<String, Object> context) {
 		super(node, context);
 	}
 
@@ -21,7 +21,7 @@ public class Remove extends SimulationCommand<SimulationNode> {
 		}
 		
 		Agent agent = agents().get(args.get(0));
-		node.remove(agent);
+		nodeService.getSimulation().remove(agent);
 		agents().remove(args.get(0));
 	}
 

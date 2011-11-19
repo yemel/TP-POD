@@ -29,6 +29,12 @@ public class Election {
 	}
 	
 	@Override
+	public String toString() {
+		return "Election [node=" + node + ", timestamp=" + timestamp
+				+ ", type=" + type + "]";
+	}
+
+	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;

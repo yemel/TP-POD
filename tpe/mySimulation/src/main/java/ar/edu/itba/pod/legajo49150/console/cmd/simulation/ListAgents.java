@@ -4,12 +4,12 @@ import java.util.List;
 import java.util.Map;
 
 import ar.edu.itba.pod.agent.runner.Agent;
-import ar.edu.itba.pod.legajo49150.console.SimulationCommand;
-import ar.edu.itba.pod.legajo49150.node.SimulationNode;
+import ar.edu.itba.pod.legajo49150.console.ContextCommand;
+import ar.edu.itba.pod.legajo49150.node.NodeService;
 
-public class ListAgents extends SimulationCommand<SimulationNode> {
+public class ListAgents extends ContextCommand<NodeService> {
 
-	public ListAgents(SimulationNode node, Map<String, Object> context) {
+	public ListAgents(NodeService node, Map<String, Object> context) {
 		super(node, context);
 	}
 
@@ -20,8 +20,8 @@ public class ListAgents extends SimulationCommand<SimulationNode> {
 			return;
 		}
 		
-		System.out.println("#" + node.agentsRunning() + " agents running" );
-		for(Agent each: node.getAgentsRunning()){
+		System.out.println("#" + nodeService.getSimulation().agentsRunning() + " agents running" );
+		for(Agent each: nodeService.getSimulation().getAgentsRunning()){
 			System.out.println("\t -> " + each.toString());
 		}
 	}

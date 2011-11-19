@@ -15,12 +15,14 @@ import ar.edu.itba.node.Node;
 import ar.edu.itba.node.NodeInformation;
 import ar.edu.itba.node.api.ClusterAdministration;
 import ar.edu.itba.node.api.StatisticReports;
+import ar.edu.itba.pod.doc.ThreadSafe;
 
+@ThreadSafe
 public class Directory {
 
 	private Registry registry;
-	private ConcurrentMap<NodeInformation, NodeServices> cache =
-			new ConcurrentHashMap<NodeInformation, NodeServices>();
+	private final ConcurrentMap<NodeInformation, RemoteServices> cache =
+			new ConcurrentHashMap<NodeInformation, RemoteServices>();
 
 	public void publishAdmin(ClusterNode node, String host, int port) throws RemoteException, AlreadyBoundException{
 		Registry registry = getRegistry(host, port);
@@ -49,7 +51,7 @@ public class Directory {
 
 	//TODO: Abstraer esto
 	public ClusterAdministration getAdmin(NodeInformation nodeInfo) throws RemoteException, NotBoundException{
-		NodeServices services = getService(nodeInfo);
+		RemoteServices services = getService(nodeInfo);
 		ClusterAdministration admin = services.getAdmin();
 		if(admin == null){
 			final Registry reg = LocateRegistry.getRegistry(nodeInfo.host(), nodeInfo.port());
@@ -60,7 +62,7 @@ public class Directory {
 	}
 
 	public RemoteEventDispatcher getDispatcher(NodeInformation nodeInfo) throws RemoteException, NotBoundException{
-		NodeServices services = getService(nodeInfo);
+		RemoteServices services = getService(nodeInfo);
 		RemoteEventDispatcher dispatcher = services.getDispatcher();
 		if(dispatcher == null){
 			final Registry reg = LocateRegistry.getRegistry(nodeInfo.host(), nodeInfo.port());
@@ -72,7 +74,7 @@ public class Directory {
 
 	public AgentsBalancer getBalancer(NodeInformation nodeInfo) throws RemoteException {
 		try {
-			NodeServices services = getService(nodeInfo);
+			RemoteServices services = getService(nodeInfo);
 			AgentsBalancer balancer = services.getBalancer();
 			if(balancer == null){
 				final Registry reg = LocateRegistry.getRegistry(nodeInfo.host(), nodeInfo.port());
@@ -87,7 +89,7 @@ public class Directory {
 	
 	public AgentsTransfer getTransfer(NodeInformation nodeInfo) throws RemoteException {
 		try {
-			NodeServices services = getService(nodeInfo);
+			RemoteServices services = getService(nodeInfo);
 			AgentsTransfer transfer = services.getTransfer();
 			if(transfer == null){
 				final Registry reg = LocateRegistry.getRegistry(nodeInfo.host(), nodeInfo.port());
@@ -99,17 +101,17 @@ public class Directory {
 			throw new RuntimeException("Not Bound???" + e);
 		}
 	}
-
-	private NodeServices getService(NodeInformation nodeInfo){
-		NodeServices services = cache.get(nodeInfo);
+	
+	private RemoteServices getService(NodeInformation nodeInfo){
+		RemoteServices services = cache.get(nodeInfo);
 		if(services == null){
-			services = new NodeServices();
+			services = new RemoteServices();
 			cache.put(nodeInfo, services);
 		}
 		return services;
 	}
 
-	private Registry getRegistry(String host, int port) throws RemoteException {
+	private synchronized Registry getRegistry(String host, int port) throws RemoteException {
 		if(registry == null){
 			registry = LocateRegistry.createRegistry(port);
 		}

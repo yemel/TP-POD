@@ -1,5 +1,7 @@
 package ar.edu.itba.pod.legajo49150.simulation.events;
 
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.util.Random;
 import java.util.Set;
 
@@ -39,11 +41,7 @@ public class Publisher implements Runnable {
 				Thread.sleep(PUBLISHING_TIME.getMillis());
 				Iterable<NodeInformation> nodes = Iterables.filter(clusterNode.connectedNodes(), randomPublish(PUBLISH_PROBABILITY, clusterNode.getNodeInfo()));
 				for(NodeInformation node: nodes){
-					Set<EventInformation> events = remoteDispatcher.newEventsFor(node);
-					RemoteEventDispatcher dispatcher = directory.getDispatcher(node);
-					for(EventInformation event: events){
-						dispatcher.publish(event);
-					}
+					pushEventsFor(node);
 				}
 			} catch (InterruptedException e) {
 				LOGGER.info("Publisher SHUTDOWN");
@@ -54,6 +52,14 @@ public class Publisher implements Runnable {
 		}
 	}
 
+	public void pushEventsFor(NodeInformation node) throws RemoteException, InterruptedException, NotBoundException{
+		Set<EventInformation> events = remoteDispatcher.newEventsFor(node);
+		RemoteEventDispatcher dispatcher = directory.getDispatcher(node);
+		for(EventInformation event: events){
+			dispatcher.publish(event);
+		}
+	}
+	
 	private static Predicate<NodeInformation> randomPublish(final double probability, final NodeInformation self){
 		return new Predicate<NodeInformation>() {
 			private Random rnd = new Random();

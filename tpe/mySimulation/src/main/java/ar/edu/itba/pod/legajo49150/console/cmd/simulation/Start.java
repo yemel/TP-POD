@@ -5,12 +5,12 @@ import java.util.Map;
 
 import org.joda.time.Duration;
 
-import ar.edu.itba.pod.legajo49150.console.SimulationCommand;
-import ar.edu.itba.pod.legajo49150.node.SimulationNode;
+import ar.edu.itba.pod.legajo49150.console.ContextCommand;
+import ar.edu.itba.pod.legajo49150.node.NodeService;
 
-public class Start extends SimulationCommand<SimulationNode> {
+public class Start extends ContextCommand<NodeService> {
 
-	public Start(SimulationNode node, Map<String, Object> context) {
+	public Start(NodeService node, Map<String, Object> context) {
 		super(node, context);
 	}
 
@@ -22,7 +22,8 @@ public class Start extends SimulationCommand<SimulationNode> {
 		}
 		
 		Duration d = Duration.standardMinutes(Integer.valueOf(args.get(0)));
-		node.start(d);
+		nodeService.getDispatcher().start();
+		nodeService.getSimulation().start(d);
 	}
 
 	@Override

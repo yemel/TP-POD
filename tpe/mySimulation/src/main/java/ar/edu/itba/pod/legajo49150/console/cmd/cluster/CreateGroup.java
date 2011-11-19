@@ -4,18 +4,19 @@ import java.rmi.RemoteException;
 import java.util.List;
 
 import ar.edu.itba.pod.legajo49150.console.Command;
-import ar.edu.itba.pod.legajo49150.node.ClusterNode;
+import ar.edu.itba.pod.legajo49150.node.NodeService;
 
-public class CreateGroup extends Command<ClusterNode> {
+public class CreateGroup extends Command<NodeService> {
 
-	public CreateGroup(ClusterNode node){
+	public CreateGroup(NodeService node){
 		super(node);
 	}
 	
 	@Override
 	protected void execute(List<String> args) {
 		try {
-			node.createGroup();
+			nodeService.getAdministrator().createGroup();
+			nodeService.getBalancer().getCoordinator();
 		} catch (RemoteException e) {
 			System.out.println("Error: " + e.getMessage());
 		}

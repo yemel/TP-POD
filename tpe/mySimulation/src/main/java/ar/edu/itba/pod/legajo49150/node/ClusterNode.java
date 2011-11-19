@@ -8,8 +8,7 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
-
+import ar.edu.itba.balance.api.NotCoordinatorException;
 import ar.edu.itba.node.NodeInformation;
 import ar.edu.itba.node.api.ClusterAdministration;
 import ar.edu.itba.pod.doc.ThreadSafe;
@@ -18,18 +17,18 @@ import com.google.common.base.Preconditions;
 
 @ThreadSafe
 public class ClusterNode implements ClusterAdministration {
-	private final Logger LOGGER = Logger.getLogger(ClusterNode.class);
+//	private final Logger LOGGER = Logger.getLogger(ClusterNode.class);
 
 	private final NodeInformation nodeInfo;
 	private final Directory directory;
+	private final NodeService service;
 	private final Set<NodeInformation> nodes = Collections.synchronizedSet(new HashSet<NodeInformation>());
 
 	private String groupID;
 	
-	// TODO: Colección sincronizada (?)
-	
 	public ClusterNode(NodeInformation nodeInfo, NodeService service) throws RemoteException {
 		this.nodeInfo = nodeInfo;
+		this.service = service;
 		this.directory = service.getDirectory();
 		nodes.add(nodeInfo);
 		UnicastRemoteObject.exportObject(this, 0);
@@ -41,7 +40,6 @@ public class ClusterNode implements ClusterAdministration {
 		Random rnd = new Random();
 		String groupName = "group" + rnd.nextInt(1000);
 		setGroupId(groupName);
-		LOGGER.info("Grupo creado");
 	}
 
 	@Override
@@ -68,7 +66,7 @@ public class ClusterNode implements ClusterAdministration {
 	@Override
 	public void disconnectFromGroup(NodeInformation node)
 	throws RemoteException, NotBoundException {
-		if(this.nodes.contains(node)){ // TODO: Preguntar si esto tendría que ser fire-and-forget
+		if(this.nodes.contains(node)){
 			removeNode(node);
 			for(NodeInformation each: this.nodes){
 				ClusterAdministration other = directory.getAdmin(each);
@@ -80,6 +78,14 @@ public class ClusterNode implements ClusterAdministration {
 		if(node.equals(this.nodeInfo)){
 			disconnect();
 		}
+		
+//		if(service.getBalancer().isCoordinator()){
+//			try {
+//				service.getBalancer().rebalance();
+//			} catch (NotCoordinatorException e) {
+//				e.printStackTrace();
+//			}
+//		}
 	}
 
 	@Override
@@ -92,6 +98,15 @@ public class ClusterNode implements ClusterAdministration {
 				node.addNewNode(nodeInfo);
 			}
 		}
+		
+		if(service.getBalancer().isCoordinator()){
+			try {
+				service.getBalancer().rebalance();
+			} catch (NotCoordinatorException e) {
+				e.printStackTrace();
+			}
+		}
+		
 		return nodes;
 	}
 
