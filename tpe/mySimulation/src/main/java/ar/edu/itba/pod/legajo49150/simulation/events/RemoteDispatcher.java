@@ -70,15 +70,16 @@ public class RemoteDispatcher implements RemoteEventDispatcher {
 	}
 
 	@Override
-	public synchronized void publish(EventInformation event) throws RemoteException,
+	public synchronized boolean publish(EventInformation event) throws RemoteException,
 	InterruptedException {
 		TimedEventInformation ev = new TimedEventInformation(event, new DateTime());
 		if(!messages.contains(ev)){
 			messages.add(ev);
 			localDispatcher.localPublish(event.source(), event.event());
+			return false;
 		}
 		
-		// TODO: El método tendría que devolver true o false! Bajar de IOL
+		return true;
 	}
 
 	private static Predicate<TimedEventInformation> newEventsPredicate(final DateTime lastTime, final NodeInformation node){

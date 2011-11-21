@@ -41,13 +41,15 @@ public class Poller implements Runnable {
 			Thread.sleep(POLLING_TIME.getMillis());
 			Iterable<NodeInformation> nodes = Iterables.filter(clusterNode.connectedNodes(), randomPublish(POLLING_PROBABILITY, clusterNode.getNodeInfo()));
 			for(NodeInformation node: nodes){
-				pollEventsFor(node);
+				try {
+					pollEventsFor(node);
+				} catch (Exception e) {
+					clusterNode.disconnectNode(node);
+				}
 			}
-			} catch (InterruptedException e) {
+			} catch (Exception e) {
 				LOGGER.info("Poller SHUTDOWN");
 				return;
-			} catch (Exception e) {
-				LOGGER.error("Poller can't reach a node: " + e.getMessage());
 			}
 		}
 	}

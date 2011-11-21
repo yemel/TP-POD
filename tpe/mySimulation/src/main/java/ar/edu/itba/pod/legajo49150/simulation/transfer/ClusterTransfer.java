@@ -6,8 +6,6 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
-import org.apache.log4j.Logger;
-
 import ar.edu.itba.balance.api.AgentsTransfer;
 import ar.edu.itba.balance.api.NodeAgent;
 import ar.edu.itba.event.RemoteEventDispatcher;
@@ -20,7 +18,7 @@ import com.google.common.collect.Lists;
 
 @ThreadSafe
 public class ClusterTransfer implements AgentsTransfer {
-	private final Logger LOOGER = Logger.getLogger(ClusterTransfer.class);
+//	private final Logger LOOGER = Logger.getLogger(ClusterTransfer.class);
 	
 	private final NodeService services;
 	
@@ -62,12 +60,10 @@ public class ClusterTransfer implements AgentsTransfer {
 		List<Agent> agents = services.getSimulation().getAgentsRunning();
 		agents = agents.subList(0, Math.min(numberOfAgents, agents.size()));
 		List<NodeAgent> ret = Lists.newArrayList();
-		LOOGER.debug("Agentes actuales: " + services.getSimulation().getAgentsRunning());
 		for(Agent agent: agents){
 			services.getSimulation().remove(agent);
 			ret.add(new NodeAgent(services.getAdministrator().getNodeInfo(), agent));
 		}
-		LOOGER.debug("Agentes restantes: " + services.getSimulation().getAgentsRunning());
 		return ret;
 	}
 

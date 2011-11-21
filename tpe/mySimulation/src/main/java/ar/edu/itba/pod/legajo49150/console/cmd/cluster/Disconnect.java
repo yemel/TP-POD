@@ -17,6 +17,7 @@ public class Disconnect extends Command<NodeService> {
 			nodeService.getBalancer().localShutdown();
 			System.out.println("Me estoy llendo con " + nodeService.getSimulation().agentsRunning() + " agentes");
 			nodeService.getAdministrator().disconnectFromGroup(nodeService.getAdministrator().getNodeInfo());
+			nodeService.getBalancer().clearCoordinator();
 		} catch (Exception e) {
 			System.out.println("Error: " + e.getMessage());
 		}

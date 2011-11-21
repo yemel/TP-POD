@@ -82,12 +82,20 @@ public class ClusterBalancer implements AgentsBalancer {
 		}
 	}
 
-	public void localShutdown() throws RemoteException, NotCoordinatorException{
-		List<NodeAgent> agents = services.getTransfer().stopAndGet(services.getSimulation().agentsRunning());
-		AgentsBalancer balancer = services.getDirectory().getBalancer(getCoordinator());
-		balancer.shutdown(agents);
+	public void localShutdown() throws RemoteException{
+		boolean done = false;
+		while(!done){
+			List<NodeAgent> agents = services.getTransfer().stopAndGet(services.getSimulation().agentsRunning());
+			AgentsBalancer balancer = services.getDirectory().getBalancer(getCoordinator());
+			try {
+				balancer.shutdown(agents);
+				done = true;
+			} catch (NotCoordinatorException e) {
+				currentCoordinator.set(e.getNewCoordinator());
+			}
+		}
 	}
-	
+
 	@Override
 	public void shutdown(List<NodeAgent> agents) throws RemoteException,
 	NotCoordinatorException {
@@ -112,8 +120,8 @@ public class ClusterBalancer implements AgentsBalancer {
 		Set<NodeInformation> nodes = services.getAdministrator().connectedNodes();
 		rebalance(agents, nodes);
 	}
-	
-	private void rebalance(List<NodeAgent> agents, Set<NodeInformation> remaining) throws NotCoordinatorException, RemoteException{
+
+	private synchronized void rebalance(List<NodeAgent> agents, Set<NodeInformation> remaining) throws NotCoordinatorException, RemoteException{
 		if(!isCoordinator()){
 			throw new NotCoordinatorException(currentCoordinator.get());
 		}
@@ -128,7 +136,7 @@ public class ClusterBalancer implements AgentsBalancer {
 			cluster.put(node, nagents);
 			totalAgents += nagents;
 		}
-		
+
 		// Sort by Value
 		List<Map.Entry<NodeInformation, Integer>> entries = Lists.newLinkedList(cluster.entrySet());
 		Collections.sort(entries, new Comparator<Map.Entry<NodeInformation, Integer>>() {
@@ -138,9 +146,10 @@ public class ClusterBalancer implements AgentsBalancer {
 				return o2.getValue().compareTo(o1.getValue());
 			}
 		});
-		
+
 		// Reacomodamos los nodos
-		int maxAgent = (int) Math.ceil((double)totalAgents/(double)remaining.size());
+		double avg = (double)totalAgents/(double)remaining.size();
+		int maxAgent = (int) Math.ceil(avg);
 		for(Entry<NodeInformation, Integer> each: entries){
 			int toTransfer = Math.min(maxAgent - each.getValue(), agents.size());
 			if(toTransfer > 0){
@@ -148,23 +157,30 @@ public class ClusterBalancer implements AgentsBalancer {
 				transfer.runAgentsOnNode(Lists.newArrayList(agents.subList(0, toTransfer)));
 				agents = agents.subList(toTransfer, agents.size());
 			} else if(toTransfer < 0){
-				toTransfer = -toTransfer;
 				AgentsTransfer transfer = services.getDirectory().getTransfer(each.getKey());
-				List<NodeAgent> extras = transfer.stopAndGet(toTransfer);
+				List<NodeAgent> extras = transfer.stopAndGet(-toTransfer);
 				agents.addAll(extras);
 			}
+			maxAgent = (int) Math.ceil(avg + (avg - (each.getValue() + toTransfer)));
 		}
-		
+
 		LOGGER.debug("TERMINAMOS DE REBALANCEAR, QUEDARON " + agents.size() + " AGENTES COLGADOS!");
 	}
 
 	public void addAgentToCluster(Agent agent){
-		try {
-			AgentsBalancer balancer = services.getDirectory().getBalancer(getCoordinator());
-			NodeAgent a = new NodeAgent(null, agent);
-			balancer.addAgentToCluster(a);
-		} catch (Exception e) {
-			e.printStackTrace();
+		boolean done = false;
+		while(!done){
+			try {
+				AgentsBalancer balancer = services.getDirectory().getBalancer(getCoordinator());
+				NodeAgent a = new NodeAgent(null, agent);
+				balancer.addAgentToCluster(a);
+				done = true;
+			} catch (NotCoordinatorException e) {
+				services.getBalancer().currentCoordinator.set(e.getNewCoordinator());
+			} catch (Exception e){
+				e.printStackTrace();
+				done = true;
+			}
 		}
 	}
 
@@ -248,8 +264,20 @@ public class ClusterBalancer implements AgentsBalancer {
 			lock.lock();
 			isDone.signalAll();
 			lock.unlock();
+
+			try {
+				if(isCoordinator()){
+					LOGGER.debug("Rebalanceo porque soy el nuevo coordinador");
+					rebalance();
+				}
+			} catch (NotCoordinatorException e1) {}
 		}
 
+	}
+
+	public void clearCoordinator() {
+		LOGGER.debug("Limpio el coordinador");
+		currentCoordinator.set(null);
 	}
 
 }

@@ -7,8 +7,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
-import ar.edu.itba.balance.api.NotCoordinatorException;
+import org.apache.log4j.Logger;
+
 import ar.edu.itba.node.NodeInformation;
 import ar.edu.itba.node.api.ClusterAdministration;
 import ar.edu.itba.pod.doc.ThreadSafe;
@@ -17,15 +19,15 @@ import com.google.common.base.Preconditions;
 
 @ThreadSafe
 public class ClusterNode implements ClusterAdministration {
-//	private final Logger LOGGER = Logger.getLogger(ClusterNode.class);
+	private final Logger LOGGER = Logger.getLogger(ClusterNode.class);
 
 	private final NodeInformation nodeInfo;
 	private final Directory directory;
 	private final NodeService service;
-	private final Set<NodeInformation> nodes = Collections.synchronizedSet(new HashSet<NodeInformation>());
+	private final Set<NodeInformation> nodes = Collections.newSetFromMap(new ConcurrentHashMap<NodeInformation, Boolean>());
 
 	private String groupID;
-	
+
 	public ClusterNode(NodeInformation nodeInfo, NodeService service) throws RemoteException {
 		this.nodeInfo = nodeInfo;
 		this.service = service;
@@ -33,7 +35,7 @@ public class ClusterNode implements ClusterAdministration {
 		nodes.add(nodeInfo);
 		UnicastRemoteObject.exportObject(this, 0);
 	}
-	
+
 	@Override
 	public synchronized void createGroup() throws RemoteException {
 		Preconditions.checkState(getGroupId() == null, "The node is already connected to a group");
@@ -51,7 +53,7 @@ public class ClusterNode implements ClusterAdministration {
 	public boolean isConnectedToGroup() throws RemoteException {
 		return (getGroupID() != null);
 	}
-	
+
 	@Override
 	public void connectToGroup(String host, int port) throws RemoteException,
 	NotBoundException {
@@ -62,30 +64,28 @@ public class ClusterNode implements ClusterAdministration {
 			addNode(each);
 		}
 	}
-	
+
 	@Override
 	public void disconnectFromGroup(NodeInformation node)
-	throws RemoteException, NotBoundException {
+			throws RemoteException, NotBoundException {
 		if(this.nodes.contains(node)){
 			removeNode(node);
 			for(NodeInformation each: this.nodes){
-				ClusterAdministration other = directory.getAdmin(each);
-				other.disconnectFromGroup(node);
+				try{
+					ClusterAdministration other = directory.getAdmin(each);
+					other.disconnectFromGroup(node);
+				} catch(Exception e) { disconnectNode(each); }
 			}
 		}
-		
+
 		// TODO: Preguntar si alguien me puede desconectar a mi
 		if(node.equals(this.nodeInfo)){
 			disconnect();
 		}
-		
-//		if(service.getBalancer().isCoordinator()){
-//			try {
-//				service.getBalancer().rebalance();
-//			} catch (NotCoordinatorException e) {
-//				e.printStackTrace();
-//			}
-//		}
+
+		if(service.getBalancer().getCoordinator().equals(node)){
+			service.getBalancer().clearCoordinator();
+		}
 	}
 
 	@Override
@@ -94,19 +94,13 @@ public class ClusterNode implements ClusterAdministration {
 		if(!this.nodes.contains(nodeInfo)){
 			addNode(nodeInfo);
 			for(NodeInformation each: this.nodes){
-				ClusterAdministration node = directory.getAdmin(each);
-				node.addNewNode(nodeInfo);
+				try {
+					ClusterAdministration node = directory.getAdmin(each);
+					node.addNewNode(nodeInfo);
+				} catch(Exception e) { disconnectNode(each); }
 			}
 		}
-		
-		if(service.getBalancer().isCoordinator()){
-			try {
-				service.getBalancer().rebalance();
-			} catch (NotCoordinatorException e) {
-				e.printStackTrace();
-			}
-		}
-		
+		synchronized (service.getBalancer()) {} // syncronizo con el balancer
 		return nodes;
 	}
 
@@ -115,8 +109,22 @@ public class ClusterNode implements ClusterAdministration {
 		if(getGroupId() == null){
 			return new HashSet<NodeInformation>();
 		}
-		
+
 		return new HashSet<NodeInformation>(nodes);
+	}
+
+	public void disconnectNode(final NodeInformation nodeInfo){
+		try {
+			// Check if the node is alive!
+			ClusterAdministration admin = service.getDirectory().getAdmin(nodeInfo);
+			admin.getGroupId();
+		} catch (Exception e) {
+			LOGGER.error("The node " + nodeInfo + " is not responding! Lets disconnect it");
+			new Thread(new Runnable(){
+				@Override
+				public void run() {try { disconnectFromGroup(nodeInfo); } catch (Exception e) {}}
+			}).run();
+		}
 	}
 
 	private void disconnect(){
@@ -124,7 +132,7 @@ public class ClusterNode implements ClusterAdministration {
 		this.nodes.add(nodeInfo);
 		setGroupId(null);
 	}
-	
+
 	private synchronized String getGroupID() {
 		return groupID;
 	}
@@ -132,15 +140,15 @@ public class ClusterNode implements ClusterAdministration {
 	public synchronized void setGroupId(String groupID) {
 		this.groupID = groupID;
 	}
-	
+
 	public NodeInformation getNodeInfo() {
 		return nodeInfo;
 	}
-	
+
 	protected void addNode(NodeInformation nodeInfo){
 		this.nodes.add(nodeInfo);
 	}
-	
+
 	protected void removeNode(NodeInformation nodeInfo){
 		this.nodes.remove(nodeInfo);
 	}

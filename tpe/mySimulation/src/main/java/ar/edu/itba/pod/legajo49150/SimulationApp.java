@@ -11,16 +11,21 @@ import ar.edu.itba.pod.time.TimeMappers;
 public class SimulationApp {
 
 	public static void main(String[] args) throws Exception {
-		if(args.length != 3){
-			System.out.println("Invalid arguments: <Name> <Host> <Port>");
+		if(args.length != 2 && args.length != 3){
+			System.out.println("Invalid arguments: <Host> <Port>");
 			return;
 		}
 		
 		securityInit();
-		setRmiServerHostname(args[1]);
+		setRmiServerHostname(args[0]);
 		
 		TimeMapper timeMapper = TimeMappers.oneSecondEach(Duration.standardHours(6));
-		NodeInformation nodeInfo= new NodeInformation(args[1], Integer.valueOf(args[2]), args[0]);
+		String id = args[0] +":"+args[1];
+		String host = args[0];
+		int port = Integer.valueOf(args[1]);
+		
+		if(args.length == 3) id = args[2] + id;
+		NodeInformation nodeInfo= new NodeInformation(host, port, id);
 		
 		NodeService node = new NodeService();
 		node.loadServices(nodeInfo, timeMapper);

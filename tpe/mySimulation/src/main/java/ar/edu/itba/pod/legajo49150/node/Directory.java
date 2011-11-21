@@ -8,6 +8,8 @@ import java.rmi.registry.Registry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.apache.log4j.Logger;
+
 import ar.edu.itba.balance.api.AgentsBalancer;
 import ar.edu.itba.balance.api.AgentsTransfer;
 import ar.edu.itba.event.RemoteEventDispatcher;
@@ -19,7 +21,8 @@ import ar.edu.itba.pod.doc.ThreadSafe;
 
 @ThreadSafe
 public class Directory {
-
+	private Logger LOGGER = Logger.getLogger(Directory.class);
+	
 	private Registry registry;
 	private final ConcurrentMap<NodeInformation, RemoteServices> cache =
 			new ConcurrentHashMap<NodeInformation, RemoteServices>();
@@ -70,6 +73,18 @@ public class Directory {
 			services.setDispatcher(dispatcher);
 		}
 		return dispatcher;
+	}
+	
+	public StatisticReports getStatistics(NodeInformation nodeInfo) throws RemoteException, NotBoundException{
+		RemoteServices services = getService(nodeInfo);
+		StatisticReports statistics = services.getReports();
+		if(statistics == null){
+			
+			final Registry reg = LocateRegistry.getRegistry(nodeInfo.host(), nodeInfo.port());
+			statistics = (StatisticReports) reg.lookup(Node.STATISTIC_REPORTS);
+			services.setReports(statistics);
+		}
+		return statistics;
 	}
 
 	public AgentsBalancer getBalancer(NodeInformation nodeInfo) throws RemoteException {

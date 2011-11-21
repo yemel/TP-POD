@@ -24,7 +24,7 @@ public interface RemoteEventDispatcher extends Remote {
 	 * @throws RemoteException
 	 * @throws InterruptedException
 	 */
-	void publish(EventInformation event) throws RemoteException, InterruptedException;
+	boolean publish(EventInformation event) throws RemoteException, InterruptedException;
 
 	/**
 	 * Finds and returns all the new events for the receiving node. Messages

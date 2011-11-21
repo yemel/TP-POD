@@ -41,13 +41,15 @@ public class Publisher implements Runnable {
 				Thread.sleep(PUBLISHING_TIME.getMillis());
 				Iterable<NodeInformation> nodes = Iterables.filter(clusterNode.connectedNodes(), randomPublish(PUBLISH_PROBABILITY, clusterNode.getNodeInfo()));
 				for(NodeInformation node: nodes){
-					pushEventsFor(node);
+					try {
+						pushEventsFor(node);
+					} catch (Exception e) {
+						clusterNode.disconnectNode(node);
+					}
 				}
-			} catch (InterruptedException e) {
+			} catch (Exception e) {
 				LOGGER.info("Publisher SHUTDOWN");
 				return;
-			} catch (Exception e) {
-				LOGGER.error("Publisher can't reach a node: " + e.getMessage());
 			}
 		}
 	}
