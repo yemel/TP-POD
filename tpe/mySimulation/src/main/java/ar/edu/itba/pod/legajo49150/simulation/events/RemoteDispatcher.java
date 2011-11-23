@@ -54,10 +54,12 @@ public class RemoteDispatcher implements RemoteEventDispatcher {
 	public BlockingQueue<Object> moveQueueFor(Agent agent)
 			throws RemoteException {
 		BlockingQueue<Object> queue = localDispatcher.deregister(agent);
+		LOGGER.info("Retorno la cola de eventos para el agente " + agent.name() + " (" + queue.size() + " eventos)");
 		return queue;
 	}
 
 	public void setQueueFor(Agent agent, BlockingQueue<Object> queue){
+		LOGGER.info("Seteo la cola de eventos para el agente " + agent.name() + " (" + queue.size() + " eventos)");
 		localDispatcher.setAgentQueue(agent, queue);
 	}
 	
@@ -75,10 +77,10 @@ public class RemoteDispatcher implements RemoteEventDispatcher {
 		TimedEventInformation ev = new TimedEventInformation(event, new DateTime());
 		if(!messages.contains(ev)){
 			messages.add(ev);
+			LOGGER.debug("Publico nuevo evento a la simulación local: " + event);
 			localDispatcher.localPublish(event.source(), event.event());
 			return false;
 		}
-		
 		return true;
 	}
 

@@ -42,6 +42,7 @@ public class ClusterNode implements ClusterAdministration {
 		Random rnd = new Random();
 		String groupName = "group" + rnd.nextInt(1000);
 		setGroupId(groupName);
+		LOGGER.info("Nuevo grupo creado con ID: " + groupName);
 	}
 
 	@Override
@@ -57,28 +58,31 @@ public class ClusterNode implements ClusterAdministration {
 	@Override
 	public void connectToGroup(String host, int port) throws RemoteException,
 	NotBoundException {
-		ClusterAdministration node = directory.getAdmin(new NodeInformation(host, port, "NOSE!")); // TODO!
-		setGroupId(node.getGroupId());	// TODO: Preguntar si esto puede tirar IllegalState
+		ClusterAdministration node = directory.getAdmin(new NodeInformation(host, port, "NOSE!"));
+		setGroupId(node.getGroupId());
 		Set<NodeInformation> nodes = node.addNewNode(nodeInfo);
 		for(NodeInformation each: nodes){
 			addNode(each);
 		}
+		LOGGER.info("Estamos conectados al grupo ID= " + getGroupId() + " y hay " + nodes.size() + " nodos.");
 	}
 
 	@Override
 	public void disconnectFromGroup(NodeInformation node)
 			throws RemoteException, NotBoundException {
+		LOGGER.debug("Desconectando al nodo " + node);
 		if(this.nodes.contains(node)){
 			removeNode(node);
 			for(NodeInformation each: this.nodes){
 				try{
 					ClusterAdministration other = directory.getAdmin(each);
 					other.disconnectFromGroup(node);
-				} catch(Exception e) { disconnectNode(each); }
+				} catch(Exception e) {
+					LOGGER.error("Error en la comunicación con " + each + " al desconectar a " + node);
+				}
 			}
 		}
 
-		// TODO: Preguntar si alguien me puede desconectar a mi
 		if(node.equals(this.nodeInfo)){
 			disconnect();
 		}
@@ -86,6 +90,7 @@ public class ClusterNode implements ClusterAdministration {
 		if(service.getBalancer().getCoordinator().equals(node)){
 			service.getBalancer().clearCoordinator();
 		}
+		LOGGER.info("El nodo "+ node +" fue desconectado");
 	}
 
 	@Override
@@ -99,6 +104,7 @@ public class ClusterNode implements ClusterAdministration {
 					node.addNewNode(nodeInfo);
 				} catch(Exception e) { disconnectNode(each); }
 			}
+			LOGGER.info("Agregamos al nodo " + nodeInfo + " al cluster");
 		}
 		synchronized (service.getBalancer()) {} // syncronizo con el balancer
 		return nodes;
@@ -119,7 +125,7 @@ public class ClusterNode implements ClusterAdministration {
 			ClusterAdministration admin = service.getDirectory().getAdmin(nodeInfo);
 			admin.getGroupId();
 		} catch (Exception e) {
-			LOGGER.error("The node " + nodeInfo + " is not responding! Lets disconnect it");
+			LOGGER.error("Ocurrió un error al intentar contactar al nodo " + nodeInfo + ". Lo desconectamos!");
 			new Thread(new Runnable(){
 				@Override
 				public void run() {try { disconnectFromGroup(nodeInfo); } catch (Exception e) {}}
@@ -131,6 +137,7 @@ public class ClusterNode implements ClusterAdministration {
 		this.nodes.clear();
 		this.nodes.add(nodeInfo);
 		setGroupId(null);
+		LOGGER.info("Estamos desconnectados del cluster.");
 	}
 
 	private synchronized String getGroupID() {

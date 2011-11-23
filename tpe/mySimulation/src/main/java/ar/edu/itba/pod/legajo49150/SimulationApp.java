@@ -19,7 +19,7 @@ public class SimulationApp {
 		securityInit();
 		setRmiServerHostname(args[0]);
 		
-		TimeMapper timeMapper = TimeMappers.oneSecondEach(Duration.standardHours(6));
+		TimeMapper timeMapper = TimeMappers.oneSecondEach(Duration.standardHours(72));
 		String id = args[0] +":"+args[1];
 		String host = args[0];
 		int port = Integer.valueOf(args[1]);

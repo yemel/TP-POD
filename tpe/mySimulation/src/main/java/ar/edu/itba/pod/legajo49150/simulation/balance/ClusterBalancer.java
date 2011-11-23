@@ -63,6 +63,7 @@ public class ClusterBalancer implements AgentsBalancer {
 		Election e = new Election(node, timestamp, Election.MsgType.ELECT);
 		if(!elections.contains(e)){
 			elections.add(e);
+			LOGGER.info("Llegó una eleción del nodo " + node.id() + " @" + timestamp);
 			toProcess.add(e);
 		}
 	}
@@ -70,6 +71,7 @@ public class ClusterBalancer implements AgentsBalancer {
 	@Override
 	public void bullyOk(NodeInformation node) throws RemoteException {
 		bullyLatch.countDown();
+		LOGGER.info("Recivo un bullyOK del nodo " + node.id());
 	}
 
 	@Override
@@ -78,6 +80,7 @@ public class ClusterBalancer implements AgentsBalancer {
 		Election e = new Election(node, timestamp, Election.MsgType.CORD);
 		if(!elections.contains(e)){
 			elections.add(e);
+			LOGGER.info("Recivo un bullyCoordinator, coordinador=" + node.id() + " @" + timestamp);
 			toProcess.add(e);
 		}
 	}
@@ -88,7 +91,9 @@ public class ClusterBalancer implements AgentsBalancer {
 			List<NodeAgent> agents = services.getTransfer().stopAndGet(services.getSimulation().agentsRunning());
 			AgentsBalancer balancer = services.getDirectory().getBalancer(getCoordinator());
 			try {
+				LOGGER.debug("Aviso al coordinador que me voy del cluster");
 				balancer.shutdown(agents);
+				LOGGER.info("El coordinador me deja irme en paz");
 				done = true;
 			} catch (NotCoordinatorException e) {
 				currentCoordinator.set(e.getNewCoordinator());
@@ -100,6 +105,7 @@ public class ClusterBalancer implements AgentsBalancer {
 	public void shutdown(List<NodeAgent> agents) throws RemoteException,
 	NotCoordinatorException {
 		if(agents.size() != 0){
+			LOGGER.info("COORDINATOR: Alguien se quiere ir del grupo con " + agents.size() + " agentes. Rebalance!");
 			Set<NodeInformation> nodes = services.getAdministrator().connectedNodes();
 			nodes.remove(agents.get(0).node());
 			rebalance(agents, nodes);
@@ -109,6 +115,7 @@ public class ClusterBalancer implements AgentsBalancer {
 	@Override
 	public void addAgentToCluster(NodeAgent agent) throws RemoteException,
 	NotCoordinatorException {
+		LOGGER.info("COORDINATOR: Agregamos un agente al cluster. Rebalance!");
 		List<NodeAgent> agents = Lists.newArrayList();
 		agents.add(agent);
 		Set<NodeInformation> nodes = services.getAdministrator().connectedNodes();
@@ -116,6 +123,7 @@ public class ClusterBalancer implements AgentsBalancer {
 	}
 
 	public void rebalance() throws RemoteException, NotCoordinatorException{
+		LOGGER.info("COORDINATOR: Algo pasó y tengo que rebalancear. Rebalance!");
 		List<NodeAgent> agents = Lists.newArrayList();
 		Set<NodeInformation> nodes = services.getAdministrator().connectedNodes();
 		rebalance(agents, nodes);
@@ -123,6 +131,7 @@ public class ClusterBalancer implements AgentsBalancer {
 
 	private synchronized void rebalance(List<NodeAgent> agents, Set<NodeInformation> remaining) throws NotCoordinatorException, RemoteException{
 		if(!isCoordinator()){
+			LOGGER.error("Hey, Yo no era el coordinador!");
 			throw new NotCoordinatorException(currentCoordinator.get());
 		}
 
@@ -164,7 +173,7 @@ public class ClusterBalancer implements AgentsBalancer {
 			maxAgent = (int) Math.ceil(avg + (avg - (each.getValue() + toTransfer)));
 		}
 
-		LOGGER.debug("TERMINAMOS DE REBALANCEAR, QUEDARON " + agents.size() + " AGENTES COLGADOS!");
+		LOGGER.debug("Balanceo completo, quedaron " + agents.size() + " agentes sin asignar!");
 	}
 
 	public void addAgentToCluster(Agent agent){
@@ -178,7 +187,7 @@ public class ClusterBalancer implements AgentsBalancer {
 			} catch (NotCoordinatorException e) {
 				services.getBalancer().currentCoordinator.set(e.getNewCoordinator());
 			} catch (Exception e){
-				e.printStackTrace();
+				LOGGER.error("Problemas al agregar un agente al cluster: " + e.getMessage());
 				done = true;
 			}
 		}
@@ -190,6 +199,7 @@ public class ClusterBalancer implements AgentsBalancer {
 
 	public NodeInformation getCoordinator() throws RemoteException {
 		if(currentCoordinator.get() == null){
+			LOGGER.info("No tengo coordinador, lanzo una elección!");
 			bullyElection(services.getAdministrator().getNodeInfo(), DateTime.now().getMillis());
 			try {
 				lock.lock();
@@ -235,6 +245,7 @@ public class ClusterBalancer implements AgentsBalancer {
 		private void processElection(NodeInformation self, Election e) throws RemoteException{
 			if(self.equals(e.getNode())){
 				bullyLatch = new CountDownLatch(1); // me propongo cordinador
+				LOGGER.info("Me propongo coordinador!");
 			}
 
 			if(self.id().compareTo(e.getNode().id()) > 0){
@@ -254,6 +265,7 @@ public class ClusterBalancer implements AgentsBalancer {
 
 		private void processCoordinator(Election e) throws RemoteException{
 			currentCoordinator.set(e.getNode());
+			LOGGER.info("Seteamos un nuevo coordinador: " + e.getNode().id());
 			for(NodeInformation each: services.getAdministrator().connectedNodes()){
 				if(!each.equals(services.getAdministrator().getNodeInfo())){
 					AgentsBalancer balancer = services.getDirectory().getBalancer(each);
@@ -267,7 +279,7 @@ public class ClusterBalancer implements AgentsBalancer {
 
 			try {
 				if(isCoordinator()){
-					LOGGER.debug("Rebalanceo porque soy el nuevo coordinador");
+					LOGGER.debug("Soy el nuevo coordinador, entonces rebalanaceo");
 					rebalance();
 				}
 			} catch (NotCoordinatorException e1) {}

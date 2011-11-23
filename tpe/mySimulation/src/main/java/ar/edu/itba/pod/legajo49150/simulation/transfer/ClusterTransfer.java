@@ -6,6 +6,8 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
+import org.apache.log4j.Logger;
+
 import ar.edu.itba.balance.api.AgentsTransfer;
 import ar.edu.itba.balance.api.NodeAgent;
 import ar.edu.itba.event.RemoteEventDispatcher;
@@ -18,7 +20,7 @@ import com.google.common.collect.Lists;
 
 @ThreadSafe
 public class ClusterTransfer implements AgentsTransfer {
-//	private final Logger LOOGER = Logger.getLogger(ClusterTransfer.class);
+	private final Logger LOGGER = Logger.getLogger(ClusterTransfer.class);
 	
 	private final NodeService services;
 	
@@ -36,14 +38,12 @@ public class ClusterTransfer implements AgentsTransfer {
 			} else {
 				try {
 					RemoteEventDispatcher dispatcher = dir.getDispatcher(nodeAgent.node());
-					// Zona de exclusión mutua
 					services.getDispatcher().synchronizeWith(nodeAgent.node());
 					BlockingQueue<Object> events = dispatcher.moveQueueFor(nodeAgent.agent());
 					services.getDispatcher().setQueueFor(nodeAgent.agent(), events);
 					services.getSimulation().add(nodeAgent.agent());
-					// Termina la zona de exclusión
 				} catch (NotBoundException e) {
-					e.printStackTrace();
+					LOGGER.error("Error en la comunicación con " + nodeAgent.node().id() +". Message: " + e.getMessage());
 				}
 			}
 		}
@@ -64,6 +64,7 @@ public class ClusterTransfer implements AgentsTransfer {
 			services.getSimulation().remove(agent);
 			ret.add(new NodeAgent(services.getAdministrator().getNodeInfo(), agent));
 		}
+		LOGGER.info("El coordinador me pidió " + numberOfAgents + " agentes y yo les doy " + ret.size());
 		return ret;
 	}
 
