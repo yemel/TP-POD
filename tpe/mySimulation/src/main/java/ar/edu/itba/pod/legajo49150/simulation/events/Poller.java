@@ -19,7 +19,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 
 public class Poller implements Runnable {
-	private Logger LOGGER = Logger.getLogger(Poller.class);
+	private Logger LOGGER = Logger.getLogger(RemoteDispatcher.class);
 	
 	private static Duration POLLING_TIME = Duration.millis(600);
 	private static double POLLING_PROBABILITY = 0.1;

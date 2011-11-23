@@ -1,1 +1,30 @@
-Trabajo Práctico Especial de POD @ITBA
+Trabajo Práctico Especial de POD
+
+Alumno: Yemel Jardi Bello
+Legajo: 49150
+
+Fecha: 23/11/2011
+
+Consideraciones generales:
+  - Todo nodo del cluster deja el grupo gracefully.
+  - Todo nodo que ingresa al grupo llama una elección de coordinador.
+  - Todos los nodos tienen un id diferente.
+  - La simulación no comienza inmediatamente, para lanzarla hay que correr el comando "start <MINUTES>".
+  - La implementación no es tolerante a fallas.
+
+Configuración:
+  - En la carpeta ./tpe se encuentra el proyecto maven "mySimulation", con la implementación del trabajo. Además se encuentran los proyectos "agent" y "simulation" entregados por la cátedra.
+  - El proyecto "mySimulation" posee un paquete raíz de nombre: ar.edu.itba.pod.legajo49150, allí se encuentran todas las clases java de la implementación.
+  - En la carpeta ./test se encuentran dos scripts: "install" y "run" los cuales realizan un package del proyecto y lo ejecutan respectivamente. En la misma carpeta se encuentra un archivo de comandos "agents.t" el cual permite cargar agentes a la simulación desde la consola de la aplicación.
+  - La aplicación genera logs para cada servicio en la carpeta ./logs. La configuración de los mismos está en ./mySimulation/src/main/resources/log4j.properties. 
+
+
+Ejecución:
+  - Para la ejecución del nodo hay que correr ./run <HOST> <PORT> desde la carpeta ./test
+  - La creación de un nuevo grupo se realiza con el commando "create"
+  - Para más información sobre comandos utilizar el comando "commands"
+
+
+Contacto:
+  - Ante cualquier consulta no duden en comunicarse con mi mail personal angel.jardi@gmail.com
+

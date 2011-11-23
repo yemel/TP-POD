@@ -81,6 +81,7 @@ public class ClusterNode implements ClusterAdministration {
 					LOGGER.error("Error en la comunicación con " + each + " al desconectar a " + node);
 				}
 			}
+			service.getDirectory().clearCache(node);
 		}
 
 		if(node.equals(this.nodeInfo)){
@@ -136,6 +137,7 @@ public class ClusterNode implements ClusterAdministration {
 	private void disconnect(){
 		this.nodes.clear();
 		this.nodes.add(nodeInfo);
+		service.getDirectory().clearCache();
 		setGroupId(null);
 		LOGGER.info("Estamos desconnectados del cluster.");
 	}

@@ -19,7 +19,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 
 public class Publisher implements Runnable {
-	private Logger LOGGER = Logger.getLogger(Publisher.class);
+	private Logger LOGGER = Logger.getLogger(RemoteDispatcher.class);
 
 	private static Duration PUBLISHING_TIME = Duration.millis(200);
 	private static double PUBLISH_PROBABILITY = 0.2;

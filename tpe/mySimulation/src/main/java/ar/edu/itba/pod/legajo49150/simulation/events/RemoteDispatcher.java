@@ -36,9 +36,10 @@ public class RemoteDispatcher implements RemoteEventDispatcher {
 
 	private final Queue<TimedEventInformation> messages = new ConcurrentLinkedQueue<TimedEventInformation>(); 
 	private final Map<NodeInformation, DateTime> calendar = new ConcurrentHashMap<NodeInformation, DateTime>();
-	private final Thread publisherT, pollerT;
+	private final Thread publisherT, pollerT, cleanerT;
 	private final Publisher publisher;
 	private final Poller poller;
+	private final Cleaner cleaner;
 
 	public RemoteDispatcher(LocalDispatcher dispatcher, NodeService services) throws RemoteException{
 		this.localDispatcher = dispatcher;
@@ -46,7 +47,8 @@ public class RemoteDispatcher implements RemoteEventDispatcher {
 		this.publisherT = new Thread(this.publisher);
 		this.poller = new Poller(services, this);
 		this.pollerT = new Thread(this.poller);
-		// TODO: Implementar el Cleaner que limpie los mensajes!
+		this.cleaner = new Cleaner(messages);
+		this.cleanerT = new Thread(this.cleaner);
 		UnicastRemoteObject.exportObject(this, 0);
 	}
 
@@ -106,14 +108,17 @@ public class RemoteDispatcher implements RemoteEventDispatcher {
 	public synchronized void start(){
 		publisherT.start();
 		pollerT.start();
+		cleanerT.start();
 	}
 
 	public synchronized void stop(){
 		try {
 			publisherT.interrupt();
 			pollerT.interrupt();
+			cleanerT.interrupt();
 			publisherT.join();
 			pollerT.join();
+			cleanerT.join();
 		} catch (InterruptedException e) {
 			LOGGER.error("Can't join with a worker thread: " + e.getMessage());
 		}

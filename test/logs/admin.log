@@ -1,0 +1,15 @@
+ INFO [main] (ClusterNode.java:67) - Estamos conectados al grupo ID= group195 y hay 3 nodos.
+DEBUG [main] (ClusterNode.java:73) - Desconectando al nodo 192.168.1.103:9093
+ INFO [main] (ClusterNode.java:142) - Estamos desconnectados del cluster.
+ INFO [main] (ClusterNode.java:94) - El nodo 192.168.1.103:9093 fue desconectado
+ection(8)-192.168.1.103] (ClusterNode.java:73) - Desconectando al nodo 192.168.1.103:9093
+DEBUG [RMI TCP Connection(2)-192.168.1.103] (ClusterNode.java:73) - Desconectando al nodo 192.168.1.103:9093
+ INFO [RMI TCP Connection(2)-192.168.1.103] (ClusterNode.java:94) - El nodo 192.168.1.103:9093 fue desconectado
+ INFO [RMI TCP Connection(8)-192.168.1.103] (ClusterNode.java:94) - El nodo 192.168.1.103:9093 fue desconectado
+DEBUG [RMI TCP Connection(7)-192.168.1.103] (ClusterNode.java:73) - Desconectando al nodo 192.168.1.103:9093
+ INFO [RMI TCP DEBUG [main] (ClusterNode.java:73) - Desconectando al nodo 192.168.1.103:9092
+ INFO [main] (ClusterNode.java:142) - Estamos desconnectados del cluster.
+ INFO [main] (ClusterNode.java:94) - El nodo 192.168.1.103:9092 fue desconectado
+)-192.168.1.103] (ClusterNode.java:73) - Desconectando al nodo 192.168.1.103:9092
+ INFO [RMI TCP Connection(2)-192.168.1.103] (ClusterNode.java:94) - El nodo 192.168.1.103:9092 fue desconectado
+ INFO [RMI TCP Connection(8)-192.168.1.103] (ClusterNode.java:94) - El nodo 192.168.1.103:9092 fue desconectado

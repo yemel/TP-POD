@@ -87,6 +87,7 @@ public class ClusterBalancer implements AgentsBalancer {
 
 	public void localShutdown() throws RemoteException{
 		boolean done = false;
+		// TODO: Para ser más tolerante a fallas tendría que poner un límite de intentos!
 		while(!done){
 			List<NodeAgent> agents = services.getTransfer().stopAndGet(services.getSimulation().agentsRunning());
 			AgentsBalancer balancer = services.getDirectory().getBalancer(getCoordinator());
@@ -158,6 +159,7 @@ public class ClusterBalancer implements AgentsBalancer {
 
 		// Reacomodamos los nodos
 		double avg = (double)totalAgents/(double)remaining.size();
+		double davg = avg;
 		int maxAgent = (int) Math.ceil(avg);
 		for(Entry<NodeInformation, Integer> each: entries){
 			int toTransfer = Math.min(maxAgent - each.getValue(), agents.size());
@@ -170,7 +172,8 @@ public class ClusterBalancer implements AgentsBalancer {
 				List<NodeAgent> extras = transfer.stopAndGet(-toTransfer);
 				agents.addAll(extras);
 			}
-			maxAgent = (int) Math.ceil(avg + (avg - (each.getValue() + toTransfer)));
+			davg += avg - (each.getValue() + toTransfer);
+			maxAgent = (int) Math.ceil(davg);
 		}
 
 		LOGGER.debug("Balanceo completo, quedaron " + agents.size() + " agentes sin asignar!");
@@ -178,6 +181,7 @@ public class ClusterBalancer implements AgentsBalancer {
 
 	public void addAgentToCluster(Agent agent){
 		boolean done = false;
+		// TODO: Para ser más tolerante a fallas tendría que poner un límite de intentos!
 		while(!done){
 			try {
 				AgentsBalancer balancer = services.getDirectory().getBalancer(getCoordinator());
